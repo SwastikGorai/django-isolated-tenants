@@ -20,6 +20,7 @@ class _TenantModelMarkerManager(_ModelScopeMarkerManager):
 class MasterModel(models.Model):
     """Abstract model whose table is always placed on the master database."""
 
+    objects = models.Manager()
     _isolated_tenants_scope_marker = _MasterModelMarkerManager()
 
     class Meta:
@@ -29,6 +30,7 @@ class MasterModel(models.Model):
 class TenantModel(models.Model):
     """Abstract model whose table is placed only on tenant databases."""
 
+    objects = models.Manager()
     _isolated_tenants_scope_marker = _TenantModelMarkerManager()
 
     class Meta:
