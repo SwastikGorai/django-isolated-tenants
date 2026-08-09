@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "django-isolated-tenants"
+version = "0.1.0"
+description = "Database-per-tenant routing and fleet migrations for Django"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Swastik Gorai" }]
+classifiers = [
+  "Framework :: Django :: 5.2",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Typing :: Typed",
+]
+dependencies = ["Django>=5.2,<5.3"]
+
+[project.optional-dependencies]
+celery = ["celery>=5.3"]
+postgres = ["psycopg[binary]>=3.1"]
+test = ["celery>=5.3", "psycopg[binary]>=3.1", "pytest>=8", "pytest-django>=4.8", "ruff>=0.11"]
+
+[project.urls]
+Changelog = "https://github.com/SwastikGorai/django-isolated-tenants/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/SwastikGorai/django-isolated-tenants#readme"
+Issues = "https://github.com/SwastikGorai/django-isolated-tenants/issues"
+Source = "https://github.com/SwastikGorai/django-isolated-tenants"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/django_isolated_tenants"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ANN"]
+ignore = ["ANN401"]
