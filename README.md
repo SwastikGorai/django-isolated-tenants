@@ -21,7 +21,7 @@ under application control.
 
 - Request-scoped, fail-closed tenant routing.
 - Explicit `MasterModel` and `TenantModel` abstract bases.
-- Compatibility settings for shared applications and legacy models.
+- Configuration settings for master applications and legacy models.
 - Dynamic PostgreSQL connection registration without serializing credentials.
 - Tenant fleet migration and schema-layout inspection commands.
 - Tenant-aware Celery tasks and parallel all-tenant fan-out.
@@ -76,9 +76,9 @@ ISOLATED_TENANTS = {
     "PROVIDER": "myproject.tenants.provider",
     "MASTER_ALIAS": "default",
     # Empty by design: each project chooses its control-plane applications.
-    "SHARED_APPS": [],
-    # Compatibility escape hatch for third-party or existing models.
-    "SHARED_MODELS": ["legacy.controlmodel"],
+    "MASTER_APPS": [],
+    # Configuration escape hatch for third-party or existing models.
+    "MASTER_MODELS": ["legacy.controlmodel"],
     "EXCLUDED_PATHS": [r"^/health/$"],
 }
 ```
@@ -119,7 +119,7 @@ resolved through this provider and are never included in Celery task headers.
 | `MasterModel` | Master database only |
 | `TenantModel` | Active tenant database only |
 | Plain `models.Model` | Deferred to Django's normal database-router chain |
-| Model in `SHARED_APPS` or `SHARED_MODELS` | Master database only |
+| Model in `MASTER_APPS` or `MASTER_MODELS` | Master database only |
 
 ```python
 from django_isolated_tenants import MasterModel, TenantModel

@@ -31,7 +31,7 @@ def object_on(model: type[models.Model], alias: str | None) -> models.Model:
     return value
 
 
-def test_router_is_fail_closed_and_shared_models_use_master() -> None:
+def test_router_is_fail_closed_and_master_models_use_master() -> None:
     router = TenantRouter()
     assert router.db_for_read(ContentType) == "default"
     with pytest.raises(TenantContextMissing):

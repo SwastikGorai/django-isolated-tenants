@@ -13,8 +13,8 @@ from .types import Tenant, TenantProvider
 class IsolatedTenantSettings:
     provider_path: str
     master_alias: str
-    shared_models: frozenset[str]
-    shared_apps: frozenset[str]
+    master_models: frozenset[str]
+    master_apps: frozenset[str]
     excluded_paths: tuple[str, ...]
     tenant_attribute: str
     database_attribute: str
@@ -29,23 +29,23 @@ def get_settings() -> IsolatedTenantSettings:
     master_alias = str(config.get("MASTER_ALIAS", "default")).strip()
     if not master_alias:
         raise ImproperlyConfigured("ISOLATED_TENANTS['MASTER_ALIAS'] must be non-empty")
-    shared_models: set[str] = set()
-    for label in config.get("SHARED_MODELS", ()):
+    master_models: set[str] = set()
+    for label in config.get("MASTER_MODELS", ()):
         normalized = str(label).strip().lower()
         if normalized.count(".") != 1 or any(not part for part in normalized.split(".")):
-            raise ImproperlyConfigured("ISOLATED_TENANTS['SHARED_MODELS'] entries must be app_label.model_name")
-        shared_models.add(normalized)
-    shared_apps: set[str] = set()
-    for label in config.get("SHARED_APPS", ()):
+            raise ImproperlyConfigured("ISOLATED_TENANTS['MASTER_MODELS'] entries must be app_label.model_name")
+        master_models.add(normalized)
+    master_apps: set[str] = set()
+    for label in config.get("MASTER_APPS", ()):
         normalized = str(label).strip().lower()
         if not normalized:
-            raise ImproperlyConfigured("ISOLATED_TENANTS['SHARED_APPS'] entries must be non-empty")
-        shared_apps.add(normalized)
+            raise ImproperlyConfigured("ISOLATED_TENANTS['MASTER_APPS'] entries must be non-empty")
+        master_apps.add(normalized)
     return IsolatedTenantSettings(
         provider_path=provider,
         master_alias=master_alias,
-        shared_models=frozenset(shared_models),
-        shared_apps=frozenset(shared_apps),
+        master_models=frozenset(master_models),
+        master_apps=frozenset(master_apps),
         excluded_paths=tuple(str(pattern) for pattern in config.get("EXCLUDED_PATHS", ())),
         tenant_attribute=str(config.get("TENANT_ATTRIBUTE", "tenant")),
         database_attribute=str(config.get("DATABASE_ATTRIBUTE", "tenant_database_alias")),

@@ -1,4 +1,4 @@
-"""Pure model-scope classification shared by routers and checks."""
+"""Pure model-scope classification used by routers and checks."""
 
 from enum import StrEnum
 from typing import Any
@@ -35,9 +35,9 @@ def classify_model(
     config = get_settings()
     app = app_label.lower()
     label = _label(app_label, model_name or getattr(getattr(model, "_meta", None), "model_name", None))
-    if app in config.shared_apps:
+    if app in config.master_apps:
         return ModelScope.MASTER
-    if label in config.shared_models:
+    if label in config.master_models:
         return ModelScope.MASTER
     if model is not None:
         marked = _marked_scope(model)
