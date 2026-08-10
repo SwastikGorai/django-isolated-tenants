@@ -1,0 +1,53 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/django-isolated-tenants/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        with:
+          version: "0.11.32"
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: uv sync --locked --extra test
+
+      - name: Check lockfile
+        run: uv lock --check
+
+      - name: Verify tag matches package version
+        run: test "v$(uv version --short)" = "$GITHUB_REF_NAME"
+
+      - name: Lint Python
+        run: uv run ruff check .
+
+      - name: Run Django system checks
+        run: uv run python -m django check --settings tests.settings
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Build distributions
+        run: uv build
+
+      - name: Publish distributions
+        run: uv publish
