@@ -50,4 +50,4 @@ jobs:
         run: uv build
 
       - name: Publish distributions
-        run: uv publish
+        uses: pypa/gh-action-pypi-publish@release/v1
