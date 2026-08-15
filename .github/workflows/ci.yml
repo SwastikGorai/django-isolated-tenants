@@ -45,6 +45,26 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      RUN_POSTGRES_E2E: "1"
+      E2E_POSTGRES_DB_ACME: isolated_tenants_acme
+      E2E_POSTGRES_DB_GLOBEX: isolated_tenants_globex
+      E2E_POSTGRES_USER: postgres
+      E2E_POSTGRES_PASSWORD: postgres
+      E2E_POSTGRES_HOST: 127.0.0.1
+      E2E_POSTGRES_PORT: "5432"
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -58,6 +78,13 @@ jobs:
 
       - name: Install package and test dependencies
         run: uv sync --locked --extra test
+
+      - name: Create disposable tenant databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          createdb -h 127.0.0.1 -U postgres isolated_tenants_acme
+          createdb -h 127.0.0.1 -U postgres isolated_tenants_globex
 
       - name: Run Django system checks
         run: uv run python -m django check --settings tests.settings

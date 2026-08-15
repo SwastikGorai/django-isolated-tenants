@@ -38,6 +38,7 @@ packages = ["src/django_isolated_tenants"]
 DJANGO_SETTINGS_MODULE = "tests.settings"
 pythonpath = ["src", "."]
 testpaths = ["tests"]
+markers = ["postgres_e2e: tests that require disposable PostgreSQL tenant databases"]
 
 [tool.ruff]
 line-length = 120
