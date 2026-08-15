@@ -10,7 +10,7 @@ from django_isolated_tenants import (
     get_current_tenant,
     tenant_context,
 )
-from django_isolated_tenants.celery import AllTenantsTask, TenantTask, all_tenants_task
+from django_isolated_tenants.celery import AllTenantsTask, TenantTask, all_tenants_task, tenant_task
 
 
 class ConcreteTask(TenantTask):
@@ -131,3 +131,39 @@ def test_all_tenants_task_rejects_duplicate_fleet_entries() -> None:
         pytest.raises(TenantTaskMetadataInvalid, match="duplicate"),
     ):
         FleetTask().apply_async()
+
+
+@pytest.mark.parametrize("option", ["task_id", "link", "link_error", "chain", "chord"])
+def test_all_tenants_task_rejects_unsupported_canvas_options(option: str) -> None:
+    class FleetTask(AllTenantsTask):
+        name = "tests.unsupported-option"
+        tenant_task = ConcreteTask()
+
+    with pytest.raises(ValueError, match="does not (accept|support)"):
+        FleetTask().apply_async(**{option: object()})
+
+
+def test_all_tenants_task_requires_a_child_task() -> None:
+    with pytest.raises(RuntimeError, match="no tenant child task"):
+        AllTenantsTask().apply_async()
+
+
+def test_task_metadata_and_explicit_tenant_are_validated() -> None:
+    task = ConcreteTask()
+    with pytest.raises(TypeError, match="requires a Tenant"):
+        task.apply_async_for_tenant(object())  # type: ignore[arg-type]
+    with pytest.raises(TenantTaskMetadataInvalid, match="requires identifier"):
+        task.apply_async_for_tenant(Tenant("", "tenant_a"))
+
+
+def test_tenant_task_decorator_supports_both_forms() -> None:
+    @tenant_task
+    def direct() -> None:
+        return None
+
+    @tenant_task(name="tests.configured")
+    def configured() -> None:
+        return None
+
+    assert isinstance(direct, TenantTask)
+    assert configured.name == "tests.configured"

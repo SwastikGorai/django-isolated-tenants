@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.migrations.state import ModelState, ProjectState
 
@@ -76,3 +77,20 @@ def test_model_scope_markers_survive_migration_state_rendering() -> None:
     router = TenantRouter()
     assert router.allow_migrate("default", "control", "explicitmaster", model=rendered_master) is True
     assert router.allow_migrate("default", "shop", "explicittenant", model=rendered_tenant) is False
+
+
+def test_relation_scope_and_partial_database_rules() -> None:
+    router = TenantRouter()
+    assert router.allow_relation(object_on(ExplicitMaster, None), object_on(ExplicitTenant, None)) is False
+    assert router.allow_relation(object_on(ExplicitMaster, None), object_on(ExplicitMaster, None)) is True
+    assert router.allow_relation(object_on(ExplicitTenant, None), object_on(ExplicitTenant, None)) is None
+    with tenant_context(Tenant("id", "tenant_a")):
+        assert router.allow_relation(object_on(ExplicitTenant, None), object_on(ExplicitTenant, None)) is True
+
+
+def test_explicit_migration_scope_hint_is_validated() -> None:
+    router = TenantRouter()
+    assert router.allow_migrate("default", "ignored", isolated_tenants_scope="master") is True
+    assert router.allow_migrate("unknown", "ignored", isolated_tenants_scope="tenant") is None
+    with pytest.raises(ImproperlyConfigured, match="isolated_tenants_scope"):
+        router.allow_migrate("default", "ignored", isolated_tenants_scope="invalid")

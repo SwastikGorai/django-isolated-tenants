@@ -1,5 +1,9 @@
+import asyncio
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, cast
+
 import pytest
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 
 from django_isolated_tenants import Tenant, get_current_tenant, tenant_context
 from django_isolated_tenants.connections import remove_database
@@ -18,7 +22,7 @@ def test_middleware_resolves_attaches_and_clears_context() -> None:
 
     def downstream(value: HttpRequest) -> HttpResponse:
         seen.append(get_current_tenant())
-        assert value.tenant_database_alias == "tenant_a"  # type: ignore[attr-defined]
+        assert cast(Any, value).tenant_database_alias == "tenant_a"
         return HttpResponse("ok")
 
     response = TenantMiddleware(downstream)(request("/orders"))
@@ -56,4 +60,38 @@ def test_middleware_restores_an_outer_context() -> None:
         assert response.status_code == 200
         assert get_current_tenant() == outer
     assert get_current_tenant() is None
+    remove_database("tenant_a")
+
+
+def test_streaming_response_keeps_context_until_consumed() -> None:
+    def content() -> Iterator[bytes]:
+        tenant = get_current_tenant()
+        assert tenant is not None
+        yield tenant.identifier.encode()
+
+    response = TenantMiddleware(lambda value: StreamingHttpResponse(content()))(request("/orders"))
+    assert get_current_tenant() == provider.tenant
+    assert b"".join(response.streaming_content) == b"tenant-id"
+    assert get_current_tenant() is None
+    remove_database("tenant_a")
+
+
+def test_async_request_and_streaming_lifecycle() -> None:
+    async def content() -> AsyncIterator[bytes]:
+        tenant = get_current_tenant()
+        assert tenant is not None
+        yield tenant.identifier.encode()
+
+    async def downstream(value: HttpRequest) -> StreamingHttpResponse:
+        assert get_current_tenant() == provider.tenant
+        return StreamingHttpResponse(content())
+
+    async def run() -> bytes:
+        response = await TenantMiddleware(downstream)(request("/orders"))
+        assert get_current_tenant() == provider.tenant
+        chunks = [chunk async for chunk in response.streaming_content]
+        assert get_current_tenant() is None
+        return b"".join(chunks)
+
+    assert asyncio.run(run()) == b"tenant-id"
     remove_database("tenant_a")
