@@ -51,6 +51,10 @@ uv add "django-isolated-tenants[postgres,celery]"
 
 The `postgres` and `celery` extras can be installed independently.
 
+>For the full public API: settings, model bases, tenant context helpers,
+>database router, middleware, Celery integration, system checks, and management
+>commands, see the [API reference](docs/API_REFERENCE.md).
+
 ## Quick start
 
 Add the application, middleware, and router to your Django settings. Place the
